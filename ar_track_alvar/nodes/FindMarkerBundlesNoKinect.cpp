@@ -42,6 +42,10 @@
 #include <sensor_msgs/image_encodings.h>
 #include <dynamic_reconfigure/server.h>
 #include <ar_track_alvar/ParamsConfig.h>
+<<<<<<< Updated upstream
+=======
+#include <std_srvs/Trigger.h>
+>>>>>>> Stashed changes
 
 using namespace alvar;
 using namespace std;
@@ -195,6 +199,10 @@ void makeMarkerMsgs(int type, int id, Pose& p,
     ar_pose_marker->header.stamp = image_msg->header.stamp;
     ar_pose_marker->id = id;
 
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
     // Publish the output frame to marker transform for main marker in each
     // bundle
     std::string markerFrame = "ar_marker_";
@@ -206,8 +214,25 @@ void makeMarkerMsgs(int type, int id, Pose& p,
                                         output_frame, markerFrame);
     tf_broadcaster->sendTransform(outputToMarker);
   }
+<<<<<<< Updated upstream
 }
 
+=======
+
+  // For non-master markers, still fill in their pose in camera frame
+  if (type != MAIN_MARKER)
+  {
+    // tf::poseTFToMsg(markerPose, ar_pose_marker->pose.pose);
+    tf::Transform tagPoseCam = markerPose;
+    tf::poseTFToMsg(tagPoseCam, ar_pose_marker->pose.pose);
+    ar_pose_marker->header.frame_id = image_msg->header.frame_id;
+    ar_pose_marker->header.stamp = image_msg->header.stamp;
+    ar_pose_marker->id = id;
+  }
+
+}
+
+>>>>>>> Stashed changes
 // Callback to handle getting video frames and processing them
 void getCapCallback(const sensor_msgs::ImageConstPtr& image_msg)
 {
@@ -282,7 +307,15 @@ void getCapCallback(const sensor_msgs::ImageConstPtr& image_msg)
             Pose p = marker.pose;
             makeMarkerMsgs(VISIBLE_MARKER, id, p, image_msg, CamToOutput,
                            &rvizMarker, &ar_pose_marker);
+<<<<<<< Updated upstream
             rvizMarkerPub_.publish(rvizMarker);
+=======
+            // ar_pose_marker.header.frame_id = image_msg->header.frame_id;
+            // ar_pose_marker.header.stamp = image_msg->header.stamp;
+            // ar_pose_marker.id = id;
+            rvizMarkerPub_.publish(rvizMarker);
+            arPoseMarkers_.markers.push_back(ar_pose_marker);
+>>>>>>> Stashed changes
           }
         }
       }
@@ -339,6 +372,37 @@ int main(int argc, char* argv[])
   ros::init(argc, argv, "marker_detect");
   ros::NodeHandle n, pn("~");
 
+<<<<<<< Updated upstream
+=======
+
+    // --- stand-up code here ---
+  // Wait until the service exists
+  while (!ros::service::exists("spot/stand", true) && ros::ok()) {
+    ROS_INFO("Waiting for 'spot/stand' service...");
+    ros::Duration(1.0).sleep();
+  }
+
+  ros::ServiceClient stand_client = n.serviceClient<std_srvs::Trigger>("spot/stand");
+  std_srvs::Trigger srv;
+  bool stood_up = false;
+
+  while (ros::ok() && !stood_up) {
+    if (stand_client.call(srv)) {
+      if (srv.response.success) {
+        stood_up = true;
+        ROS_INFO("Robot stood up: %s", srv.response.message.c_str());
+      } else {
+        ROS_WARN("Stand service responded with failure: %s", srv.response.message.c_str());
+      }
+    } else {
+      ROS_WARN("Failed to call service 'spot/stand', retrying in 3 seconds...");
+    }
+    if (!stood_up) ros::Duration(3.0).sleep();
+  }
+
+  // --- End of stand-up snippet ---
+
+>>>>>>> Stashed changes
   vector<string> bundle_files;
 
   if (argc > 1)
@@ -371,6 +435,7 @@ int main(int argc, char* argv[])
     {
       bundle_files.emplace_back(argv[i + n_args_before_list]);
     }
+<<<<<<< Updated upstream
   }
   else
   {
@@ -404,8 +469,46 @@ int main(int argc, char* argv[])
     // Camera input topics. Use remapping to map to your camera topics.
     cam_image_topic = "camera_image";
     cam_info_topic = "camera_info";
+=======
+>>>>>>> Stashed changes
+  }
+  else
+  {
+    std::string bundle_string;
+    // Get params from ros param server.
+    pn.param("marker_size", marker_size, 10.0);
+    pn.param("max_new_marker_error", max_new_marker_error, 0.08);
+    pn.param("max_track_error", max_track_error, 0.2);
+    pn.param("max_frequency", max_frequency, 8.0);
+    pn.param("marker_resolution", marker_resolution, 5);
+    pn.param("marker_margin", marker_margin, 2);
+    pn.param<std::string>("bundle_files", bundle_string, "");
+    if (!pn.getParam("output_frame", output_frame))
+    {
+      ROS_ERROR("Param 'output_frame' has to be set.");
+      exit(EXIT_FAILURE);
+    }
+
+    // extract bundles
+    std::stringstream ss(bundle_string);
+    std::string token;
+    while (std::getline(ss, token, ' '))
+    {
+      if (!token.empty())
+      {
+        bundle_files.push_back(token);
+      }
+    }
+    n_bundles = bundle_files.size();
+
+<<<<<<< Updated upstream
+=======
+    // Camera input topics. Use remapping to map to your camera topics.
+    cam_image_topic = "camera_image";
+    cam_info_topic = "camera_info";
   }
 
+>>>>>>> Stashed changes
   // Set dynamically configurable parameters so they don't get replaced by
   // default values
   pn.setParam("max_frequency", max_frequency);

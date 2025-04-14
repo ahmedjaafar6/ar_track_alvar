@@ -46,6 +46,7 @@
 #include <sensor_msgs/image_encodings.h>
 #include <dynamic_reconfigure/server.h>
 #include <ar_track_alvar/ParamsConfig.h>
+#include <std_srvs/Trigger.h>
 
 using namespace alvar;
 using namespace std;
@@ -255,12 +256,48 @@ int main(int argc, char* argv[])
 {
   ros::init(argc, argv, "marker_detect");
   ros::NodeHandle n, pn("~");
+<<<<<<< Updated upstream
 
   if (argc > 1)
   {
     ROS_WARN("Command line arguments are deprecated. Consider using ROS "
              "parameters and remappings.");
 
+=======
+
+    // --- stand-up code here ---
+  // Wait until the service exists
+  while (!ros::service::exists("spot/stand", true) && ros::ok()) {
+    ROS_INFO("Waiting for 'spot/stand' service...");
+    ros::Duration(1.0).sleep();
+  }
+
+  ros::ServiceClient stand_client = n.serviceClient<std_srvs::Trigger>("spot/stand");
+  std_srvs::Trigger srv;
+  bool stood_up = false;
+
+  while (ros::ok() && !stood_up) {
+    if (stand_client.call(srv)) {
+      if (srv.response.success) {
+        stood_up = true;
+        ROS_INFO("Robot stood up: %s", srv.response.message.c_str());
+      } else {
+        ROS_WARN("Stand service responded with failure: %s", srv.response.message.c_str());
+      }
+    } else {
+      ROS_WARN("Failed to call service 'spot/stand', retrying in 3 seconds...");
+    }
+    if (!stood_up) ros::Duration(3.0).sleep();
+  }
+
+  // --- End of stand-up snippet ---
+
+  if (argc > 1)
+  {
+    ROS_WARN("Command line arguments are deprecated. Consider using ROS "
+             "parameters and remappings.");
+
+>>>>>>> Stashed changes
     if (argc < 7)
     {
       std::cout << std::endl;
